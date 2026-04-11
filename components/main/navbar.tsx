@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Navbar() {
   return (
@@ -23,9 +24,9 @@ export default function Navbar() {
       </div>
 
       {/* CTA */}
-      <button className="px-5 py-2 rounded-full bg-gray-400/20 backdrop-blur-xl border border-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] text-gray-800 text-sm font-semibold hover:bg-gray-400/30 transition-all duration-200">
+      <Link href="/auth" className="px-5 py-2 rounded-full bg-gray-400/20 backdrop-blur-xl border border-white/70 shadow-[0_4px_20px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] text-gray-800 text-sm font-semibold hover:bg-gray-400/30 transition-all duration-200">
         Get Started
-      </button>
+      </Link>
     </nav>
   );
 }

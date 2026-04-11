@@ -16,6 +16,20 @@
   font-family: var(--font-bangers) !important;
 }
 
+@keyframes wiggle {
+  0%   { transform: translateX(0) rotate(0deg); }
+  15%  { transform: translateX(-4px) rotate(-1.5deg); }
+  30%  { transform: translateX(4px) rotate(1.5deg); }
+  45%  { transform: translateX(-3px) rotate(-1deg); }
+  60%  { transform: translateX(3px) rotate(1deg); }
+  75%  { transform: translateX(-1px) rotate(-0.5deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.btn-wiggle:hover {
+  animation: wiggle 0.45s ease-in-out;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
