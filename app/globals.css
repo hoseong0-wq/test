@@ -12,6 +12,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
+.font-bangers {
+  font-family: var(--font-bangers) !important;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
