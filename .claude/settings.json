@@ -5,7 +5,8 @@
       "mcp__supabase__list_tables",
       "Bash(python3 -c ':*)",
       "Bash(python3)",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\([*d.get\\('dependencies',{}\\), *d.get\\('devDependencies',{}\\)]\\)\\)\\)\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\([*d.get\\('dependencies',{}\\), *d.get\\('devDependencies',{}\\)]\\)\\)\\)\")",
+      "Bash(grep -r \"subscription\\\\.\" c:/test/node_modules/@polar-sh/sdk/dist/models/components/webhooksubscription*.js)"
     ]
   }
 }

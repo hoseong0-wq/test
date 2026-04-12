@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [recentThumbs, setRecentThumbs] = useState<RecentThumb[]>([]);
   const [lightbox, setLightbox]         = useState<RecentThumb | null>(null);
   const [pricingOpen, setPricingOpen]   = useState(false);
+  const [plan, setPlan]                 = useState<string>('free');
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const fetchRecentThumbs = useCallback(async () => {
     const supabase = createClient();
@@ -52,13 +54,30 @@ export default function DashboardPage() {
     setRecentThumbs(withUrls.filter((t) => t.signedUrl));
   }, []);
 
+  const fetchPlan = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase.from('users').select('plan').single();
+    if (data?.plan) setPlan(data.plan);
+  }, []);
+
   useEffect(() => { if (!isLoading && !user) router.replace('/auth'); }, [user, isLoading, router]);
-  useEffect(() => { if (user) fetchRecentThumbs(); }, [user, fetchRecentThumbs]);
+  useEffect(() => { if (user) { fetchRecentThumbs(); fetchPlan(); } }, [user, fetchRecentThumbs, fetchPlan]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  const handleManageSubscription = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/api/portal');
+      const data = await res.json();
+      if (data.url) window.open(data.url, '_blank');
+    } finally {
+      setPortalLoading(false);
+    }
+  };
 
   const handleGenerate = async (
     prompt: string, attachments: AttachedImage[], ratio: AspectRatio, style: ImageStyle
@@ -253,21 +272,43 @@ export default function DashboardPage() {
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user.user_metadata?.full_name || 'User'}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <p style={{ color: '#f1f5f9', fontSize: 12, fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user.user_metadata?.full_name || 'User'}
+                </p>
+                {plan === 'ultra' && (
+                  <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '1px 6px', borderRadius: 4, background: 'linear-gradient(135deg, rgba(251,191,36,0.18), rgba(245,158,11,0.12))', border: '1px solid rgba(251,191,36,0.35)', color: '#fbbf24', textTransform: 'uppercase' }}>
+                    Ultra
+                  </span>
+                )}
+                {plan === 'pro' && (
+                  <span style={{ flexShrink: 0, fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', padding: '1px 6px', borderRadius: 4, background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.12))', border: '1px solid rgba(99,102,241,0.4)', color: '#a78bfa', textTransform: 'uppercase' }}>
+                    Pro
+                  </span>
+                )}
+              </div>
               <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 10, margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {user.email}
               </p>
             </div>
           </div>
-          <button onClick={() => setPricingOpen(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '7px 11px', borderRadius: 9, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(165,148,252,0.85)', cursor: 'pointer', fontSize: 12, transition: 'all 0.18s', marginBottom: 7 }}
-            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.18)'; el.style.borderColor = 'rgba(99,102,241,0.42)'; el.style.color = '#c4b5fd'; }}
-            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.08)'; el.style.borderColor = 'rgba(99,102,241,0.22)'; el.style.color = 'rgba(165,148,252,0.85)'; }}
-          >
-            <CreditCard size={12} /><span>Upgrade Plan</span>
-          </button>
+          {plan !== 'free' ? (
+            <button onClick={handleManageSubscription} disabled={portalLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '7px 11px', borderRadius: 9, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(165,148,252,0.85)', cursor: portalLoading ? 'default' : 'pointer', fontSize: 12, transition: 'all 0.18s', marginBottom: 7, opacity: portalLoading ? 0.6 : 1 }}
+              onMouseEnter={(e) => { if (!portalLoading) { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.18)'; el.style.borderColor = 'rgba(99,102,241,0.42)'; el.style.color = '#c4b5fd'; } }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.08)'; el.style.borderColor = 'rgba(99,102,241,0.22)'; el.style.color = 'rgba(165,148,252,0.85)'; }}
+            >
+              <CreditCard size={12} /><span>{portalLoading ? 'Loading…' : 'Manage Subscription'}</span>
+            </button>
+          ) : (
+            <button onClick={() => setPricingOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '7px 11px', borderRadius: 9, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.22)', color: 'rgba(165,148,252,0.85)', cursor: 'pointer', fontSize: 12, transition: 'all 0.18s', marginBottom: 7 }}
+              onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.18)'; el.style.borderColor = 'rgba(99,102,241,0.42)'; el.style.color = '#c4b5fd'; }}
+              onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'rgba(99,102,241,0.08)'; el.style.borderColor = 'rgba(99,102,241,0.22)'; el.style.color = 'rgba(165,148,252,0.85)'; }}
+            >
+              <CreditCard size={12} /><span>Upgrade Plan</span>
+            </button>
+          )}
           <button onClick={handleSignOut}
             style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.36)', cursor: 'pointer', fontSize: 12, transition: 'all 0.18s' }}
             onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.color = 'rgba(248,113,113,0.9)'; el.style.borderColor = 'rgba(248,113,113,0.2)'; el.style.background = 'rgba(248,113,113,0.06)'; }}
