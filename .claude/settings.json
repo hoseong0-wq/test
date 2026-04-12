@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ':*)",
+      "mcp__supabase__list_tables",
+      "Bash(python3 -c ':*)",
+      "Bash(python3)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\([*d.get\\('dependencies',{}\\), *d.get\\('devDependencies',{}\\)]\\)\\)\\)\")"
+    ]
+  }
+}
