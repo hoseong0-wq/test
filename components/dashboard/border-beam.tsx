@@ -56,7 +56,6 @@ export function BorderBeam({
         WebkitMaskComposite: "destination-out" as string,
         maskImage:
           "linear-gradient(#fff 0 0), linear-gradient(#fff 0 0)",
-        // @ts-expect-error — maskClip is valid CSS but missing from older @types
         maskClip: "padding-box, border-box",
         maskComposite: "exclude" as string,
       } as React.CSSProperties}
