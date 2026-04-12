@@ -6,7 +6,9 @@
       "Bash(python3 -c ':*)",
       "Bash(python3)",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\([*d.get\\('dependencies',{}\\), *d.get\\('devDependencies',{}\\)]\\)\\)\\)\")",
-      "Bash(grep -r \"subscription\\\\.\" c:/test/node_modules/@polar-sh/sdk/dist/models/components/webhooksubscription*.js)"
+      "Bash(grep -r \"subscription\\\\.\" c:/test/node_modules/@polar-sh/sdk/dist/models/components/webhooksubscription*.js)",
+      "Bash(grep -E \"^/c/test/[^/]+/?$\")",
+      "Bash(find /c/test/components -name \"*.tsx\" -exec head -50 {} +)"
     ]
   }
 }

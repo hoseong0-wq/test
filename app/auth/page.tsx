@@ -258,13 +258,13 @@ export default function AuthPage() {
             {/* Disclaimer */}
             <p style={{ color: 'rgba(255,255,255,0.22)', fontSize: 10, textAlign: 'center', lineHeight: 1.75, margin: 0 }}>
               By continuing, you agree to our<br/>
-              <a href="#" style={{ color: 'rgba(168,85,247,0.65)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+              <Link href="/terms-of-service" style={{ color: 'rgba(168,85,247,0.65)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
                 Terms of Service
-              </a>
+              </Link>
               {' '}and{' '}
-              <a href="#" style={{ color: 'rgba(168,85,247,0.65)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+              <Link href="/privacy-policy" style={{ color: 'rgba(168,85,247,0.65)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
                 Privacy Policy
-              </a>
+              </Link>
             </p>
           </div>
         </div>

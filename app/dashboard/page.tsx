@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [lightbox, setLightbox]         = useState<RecentThumb | null>(null);
   const [pricingOpen, setPricingOpen]   = useState(false);
   const [plan, setPlan]                 = useState<string>('free');
+  const [credits, setCredits]           = useState<number>(0);
   const [portalLoading, setPortalLoading] = useState(false);
 
   const fetchRecentThumbs = useCallback(async () => {
@@ -54,14 +55,15 @@ export default function DashboardPage() {
     setRecentThumbs(withUrls.filter((t) => t.signedUrl));
   }, []);
 
-  const fetchPlan = useCallback(async () => {
+  const fetchUserData = useCallback(async () => {
     const supabase = createClient();
-    const { data } = await supabase.from('users').select('plan').single();
+    const { data } = await supabase.from('users').select('plan, credits').single();
     if (data?.plan) setPlan(data.plan);
+    if (data?.credits !== undefined) setCredits(data.credits ?? 0);
   }, []);
 
   useEffect(() => { if (!isLoading && !user) router.replace('/auth'); }, [user, isLoading, router]);
-  useEffect(() => { if (user) { fetchRecentThumbs(); fetchPlan(); } }, [user, fetchRecentThumbs, fetchPlan]);
+  useEffect(() => { if (user) { fetchRecentThumbs(); fetchUserData(); } }, [user, fetchRecentThumbs, fetchUserData]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
     window.addEventListener('keydown', onKey);
@@ -92,6 +94,11 @@ export default function DashboardPage() {
         body: JSON.stringify({ prompt, attachments: attachData, ratio, style }),
       });
       const data = await res.json();
+      if (res.status === 402) {
+        setPhase('idle');
+        setPricingOpen(true);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? 'Generation failed');
       setGeneratedImage({
         src: `data:${data.mimeType};base64,${data.imageData}`,
@@ -100,10 +107,12 @@ export default function DashboardPage() {
       });
       setShowEnhanced(false);
       setPhase('success');
+      fetchUserData();
       setTimeout(fetchRecentThumbs, 1500);
     } catch (err) {
       setGenerateError(err instanceof Error ? err.message : 'Something went wrong');
       setPhase('error');
+      fetchUserData();
     }
   };
 
@@ -291,6 +300,23 @@ export default function DashboardPage() {
                 {user.email}
               </p>
             </div>
+          </div>
+
+          {/* Credits display */}
+          <div style={{ marginBottom: 10, padding: '7px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 12 }}>⚡</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>Credits</span>
+            </div>
+            <span style={{
+              fontSize: 12, fontWeight: 700,
+              color: credits <= 0 ? 'rgba(248,113,113,0.85)' : credits <= 5 ? 'rgba(251,191,36,0.9)' : 'rgba(96,165,250,0.9)',
+            }}>
+              {credits}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
           </div>
           {plan !== 'free' ? (
             <button onClick={handleManageSubscription} disabled={portalLoading}

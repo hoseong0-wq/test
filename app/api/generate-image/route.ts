@@ -54,6 +54,41 @@ async function enhancePrompt(
 }
 
 export async function POST(request: Request) {
+  // ── Auth & credit check (blocking) ──────────────────────────────────────
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: userRow, error: userFetchError } = await supabase
+    .from("users")
+    .select("credits")
+    .eq("id", user.id)
+    .single();
+
+  if (userFetchError || !userRow) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  if ((userRow.credits ?? 0) <= 0) {
+    return NextResponse.json(
+      { error: "Not enough credits. Upgrade your plan to get more credits." },
+      { status: 402 }
+    );
+  }
+
+  // ── Deduct 1 credit immediately ──────────────────────────────────────────
+  const { error: deductError } = await supabase
+    .from("users")
+    .update({ credits: userRow.credits - 1 })
+    .eq("id", user.id);
+
+  if (deductError) {
+    return NextResponse.json({ error: "Failed to deduct credit." }, { status: 500 });
+  }
+
   try {
     const {
       prompt,
@@ -63,6 +98,8 @@ export async function POST(request: Request) {
     } = await request.json();
 
     if (!prompt?.trim()) {
+      // Restore credit on bad request
+      await supabase.from("users").update({ credits: userRow.credits }).eq("id", user.id);
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
@@ -84,26 +121,21 @@ export async function POST(request: Request) {
 
     // Save to Supabase (best-effort — never blocks the response)
     try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const filename = `${user.id}/${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("keep_img")
+        .upload(filename, Buffer.from(arrayBuffer), {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
 
-      if (user) {
-        const filename = `${user.id}/${Date.now()}.jpg`;
-        const { error: uploadError } = await supabase.storage
-          .from("keep_img")
-          .upload(filename, Buffer.from(arrayBuffer), {
-            contentType: "image/jpeg",
-            upsert: false,
-          });
-
-        if (!uploadError) {
-          await supabase.from("thumbnail").insert({
-            user_id: user.id,
-            prompt,
-            image_path: filename,
-            title: prompt.slice(0, 100),
-          });
-        }
+      if (!uploadError) {
+        await supabase.from("thumbnail").insert({
+          user_id: user.id,
+          prompt,
+          image_path: filename,
+          title: prompt.slice(0, 100),
+        });
       }
     } catch (saveError) {
       console.warn("[generate-image] Failed to save thumbnail:", saveError);
@@ -115,7 +147,9 @@ export async function POST(request: Request) {
       enhancedPrompt, // visible in DevTools Network tab for verification
     });
   } catch (error) {
+    // ── Restore credit on generation failure ──────────────────────────────
     console.error("[generate-image]", error);
+    await supabase.from("users").update({ credits: userRow.credits }).eq("id", user.id);
     return NextResponse.json({ error: "Image generation failed" }, { status: 500 });
   }
 }
