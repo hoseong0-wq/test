@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Session, User, SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 
 type AuthContextType = {
@@ -22,9 +22,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
+  const supabaseRef = useRef<SupabaseClient | null>(null);
 
   useEffect(() => {
+    if (!supabaseRef.current) supabaseRef.current = createClient();
+    const supabase = supabaseRef.current;
+
     // 초기 세션 로드
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -45,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (supabaseRef.current) await supabaseRef.current.auth.signOut();
   };
 
   return (

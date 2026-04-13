@@ -3,8 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { THUMBNAIL_SYSTEM_PROMPT } from "@/lib/prompts/thumbnail-system-prompt";
 import { createClient } from "@/lib/supabase/server";
 
-const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
 type AspectRatio = "16:9" | "9:16" | "1:1" | "4:3";
 type ImageStyle = "Realistic" | "3D" | "Art" | "Anime";
 
@@ -33,6 +31,7 @@ async function enhancePrompt(
   style: ImageStyle
 ): Promise<string> {
   try {
+    const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
     const styleHint = STYLE_HINTS[style];
     const fullPrompt = `${userPrompt}\n\nStyle: ${styleHint}`;
 
